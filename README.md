@@ -35,6 +35,7 @@ Para agregar los cambios realizados en los archivos, ejecute:
 
 ```bash
 git add .
+
 ```
 
 Para añadir un mensaje a los cambios realizados localmente, ejecute:

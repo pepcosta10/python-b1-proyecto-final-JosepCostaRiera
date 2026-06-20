@@ -102,10 +102,129 @@ f.	Agregar productos: Utilizar la instancia la clase 'Order', del paso c y llama
 
 """
 #Write your code here
-from users import *
+import os
 
-    
+from util import (
+    CSVFileManager,
+    CashierConverter,
+    CustomerConverter,
+    ProductConverter,
+)
+from products import Hamburger, Soda, Drink, HappyMeal
+from orders import Order
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+
 class PrepareOrder:
- #Write your code here
- pass
+    def __init__(self):
+        self.cashiers = []
+        self.customers = []
+        self.products = []
 
+    def loadData(self):
+        self.cashiers = self._loadCashiers()
+        self.customers = self._loadCustomers()
+        self.products = self._loadProducts()
+
+    def _read(self, filename):
+        manager = CSVFileManager(os.path.join(DATA_DIR, filename))
+        return manager.read()
+
+    def _loadCashiers(self):
+        return CashierConverter().convert(self._read("cashiers.csv"))
+
+    def _loadCustomers(self):
+        return CustomerConverter().convert(self._read("customers.csv"))
+
+    def _loadProducts(self):
+        converter = ProductConverter()
+        products = []
+        products += converter.convert(self._read("hamburgers.csv"), Hamburger)
+        products += converter.convert(self._read("sodas.csv"), Soda)
+        products += converter.convert(self._read("drinks.csv"), Drink)
+        products += converter.convert(self._read("happyMeal.csv"), HappyMeal)
+        return products
+
+    def findCashier(self, dni: str):
+        for cashier in self.cashiers:
+            if cashier.dni == str(dni):
+                return cashier
+        return None
+
+    def findCustomer(self, dni: str):
+        for customer in self.customers:
+            if customer.dni == str(dni):
+                return customer
+        return None
+
+    def findProduct(self, id: str):
+        for product in self.products:
+            if product.id.upper() == str(id).upper():
+                return product
+        return None
+
+    def showProducts(self):
+        print("\n----- Productos disponibles -----")
+        for product in self.products:
+            print(product.describe())
+        print("---------------------------------\n")
+
+    def showCashiers(self):
+        print("\n----- Cajeros -----")
+        for cashier in self.cashiers:
+            print(cashier.describe())
+        print("-------------------\n")
+
+    def showCustomers(self):
+        print("\n----- Clientes -----")
+        for customer in self.customers:
+            print(customer.describe())
+        print("--------------------\n")
+
+    def run(self):
+        self.loadData()
+        print("=== Sistema de comida rapida ===")
+
+        self.showCashiers()
+        cashier = None
+        while cashier is None:
+            dni = input("Introduce el DNI del cajero: ").strip()
+            cashier = self.findCashier(dni)
+            if cashier is None:
+                print("Cajero no encontrado. Intenta de nuevo.")
+        print(f"Cajero seleccionado: {cashier.name}\n")
+
+        self.showCustomers()
+        customer = None
+        while customer is None:
+            dni = input("Introduce el DNI del cliente: ").strip()
+            customer = self.findCustomer(dni)
+            if customer is None:
+                print("Cliente no encontrado. Intenta de nuevo.")
+        print(f"Cliente seleccionado: {customer.name}\n")
+
+        order = Order(cashier, customer)
+
+        self.showProducts()
+        print("Introduce los ids de los productos (uno por linea).")
+        print("Escribe 'fin' para terminar y mostrar la orden.\n")
+        while True:
+            id = input("Id del producto (o 'fin'): ").strip()
+            if id.lower() in ("fin", "end", ""):
+                break
+            product = self.findProduct(id)
+            if product is None:
+                print("Producto no encontrado. Intenta de nuevo.")
+                continue
+            order.add(product)
+            print(f"Agregado: {product.name} ({product.price} euros)")
+
+        print("\n========== ORDEN ==========")
+        order.show()
+        print("===========================")
+
+
+if __name__ == "__main__":
+    PrepareOrder().run()
